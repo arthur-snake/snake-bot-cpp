@@ -1,0 +1,1 @@
+g++ main.cpp -std=c++14 -lWs2_32 -o bot.exe
