@@ -7,6 +7,7 @@ using namespace std;
 
 using json = nlohmann::json;
 
+//map
 void SnakeMap::updateOne(CellUpdate upd) {
 	//cerr << "UPDATE(" << upd.y << ", " << upd.x << ", " << upd.id << ", " << upd.food << ")" << endl;
 	map[upd.y][upd.x] = {upd.id, 0, upd.food};
@@ -17,28 +18,7 @@ vector<SnakeCell>& SnakeMap::operator[] (int y) {
 	return this->map[y];
 }
 
-ObjectInfo createObjectInfo(json j) {
-	ObjectInfo obj;
-	obj.id = j["id"];
-	obj.type = j["type"];
-	obj.color = j["color"];
-	if (j["nick"].is_string()) obj.nick = j["nick"];
-	return obj;
-}
-
-void SnakeIds::updateOne(json j) {
-	//cerr << "new id: " << j.dump(1) << endl;
-	ObjectInfo obj = createObjectInfo(j);
-	m[obj.id] = obj;
-
-	snake->client->onNewObject(snake, obj);
-}
-
-void SnakeIds::updateMany(json j) {
-	if (!j.is_array()) return;
-	for (auto i : j) updateOne(i);
-}
-
+//cell updates
 CellUpdate parseMapEvent(string s) {
 	CellUpdate upd;
 
@@ -73,6 +53,34 @@ vector<CellUpdate> parseMapEvents(json j) {
 	return res;
 }
 
+//objects
+ObjectInfo createObjectInfo(json j) {
+	ObjectInfo obj;
+	obj.id = j["id"];
+	obj.type = j["type"];
+	obj.color = j["color"];
+	if (j["nick"].is_string()) obj.nick = j["nick"];
+	return obj;
+}
+
+void SnakeIds::updateOne(json j) {
+	//cerr << "new id: " << j.dump(1) << endl;
+	ObjectInfo obj = createObjectInfo(j);
+	m[obj.id] = obj;
+
+	snake->client->onNewObject(snake, obj);
+}
+
+void SnakeIds::updateMany(json j) {
+	if (!j.is_array()) return;
+	for (auto i : j) updateOne(i);
+}
+
+ObjectInfo SnakeIds::operator[] (string id) {
+	return m[id]; 
+}
+
+//tick processing
 void Snake::onMessage(const string& message) {
 	json j = json::parse(message);
 
@@ -82,7 +90,7 @@ void Snake::onMessage(const string& message) {
 			int rows = j["rows"];
 			int columns = j["columns"];
 
-			cerr << "Server map size is " << rows << " " << columns << endl;
+			cout << "Server map size is " << rows << " " << columns << endl;
 
 			ids = SnakeIds(this);
 			map = SnakeMap(rows, columns, this);
@@ -98,6 +106,8 @@ void Snake::onMessage(const string& message) {
 	client->onUpdate(this, j);
 }
 
+
+//Client API
 void Snake::join(string nick) {
 	json j = {
 		{"act", "join"},

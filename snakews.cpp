@@ -28,7 +28,7 @@ namespace SnakeWS{
 
 		    rc = WSAStartup(MAKEWORD(2, 2), &wsaData);
 		    if (rc) {
-		        printf("WSAStartup Failed.\n");
+		        cerr << "WSAStartup Failed." << endl;
 		        return 1;
 		    }
 		#endif

@@ -1,24 +1,11 @@
 #include "snakews.cpp"
 #include <bits/stdc++.h>
-
 #include "json.hpp"
+#include "utils.cpp"
+
 using json = nlohmann::json;
 
 using namespace std;
-
-const int DN = 4;
-const int dx[DN] = {-1, 0, 1, 0};
-const int dy[DN] = {0, -1, 0, 1};
-const string msg[DN] = {"LEFT", "UP", "RIGHT", "DOWN"};
-
-struct BfsNode {
-	bool visited = false;
-	bool start = false;
-
-	int dir = -1;
-
-	int fx = -1, fy = -1; //ancestor location
-};
 
 class MyStrategy: public SnakeClient {
 public:
@@ -28,107 +15,6 @@ public:
 
 	int cx, cy;
 
-	vector<vector<BfsNode>> t;
-
-	void printMapDebug(SnakeMap& map, SnakeIds& ids) {
-		for (int i = 0; i < map.rows; i++) {
-			for (int j = 0; j < map.columns; j++) {
-				if (i == cy && j == cx) {
-					cout << "X";
-					continue;
-				}
-				ObjectInfo obj = ids[map[i][j].id];
-				if (obj.type == "food") {
-					cout << "6";
-					continue;
-				}
-				if (obj.type == "free") {
-					cout << ".";
-					continue;
-				}
-				cout << "#";
-			}
-			cout << endl;
-		}
-		cout << endl;
-	}
-
-	void bfs(Snake* snake, SnakeMap& map, SnakeIds& ids) {
-		//printMapDebug(map, ids);
-
-		int rows = map.rows;
-		int columns = map.columns;
-		t.assign(rows, vector<BfsNode>(columns, BfsNode()));
-
-		t[cy][cx].visited = true;
-		t[cy][cx].start = true;
-
-		queue<pair<int, int> > q;
-		q.push(make_pair(cy, cx));
-
-		int tx = -1;
-		int ty = -1;
-
-		int lx, ly;
-
-		while (!q.empty()) {
-			int x, y;
-			tie(y, x) = q.front();
-			q.pop();
-
-			lx = x;
-			ly = y;
-
-			if (map[y][x].food != 0) {
-				tx = x;
-				ty = y;
-				break;
-			}
-
-			for (int i = 0; i < DN; i++) {
-				int nx = x + dx[i];
-				int ny = y + dy[i];
-
-				if (nx < 0) nx += columns;
-				if (ny < 0) ny += rows;
-				if (nx >= columns) nx -= columns;
-				if (ny >= rows) ny -= rows;
-
-				string toId = map[ny][nx].id;
-				auto obj = ids[toId];
-
-				if ((obj.type != "free" && obj.type != "food") || t[ny][nx].visited) continue;
-
-				q.push(make_pair(ny, nx));
-				t[ny][nx].visited = true;
-				t[ny][nx].fx = x;
-				t[ny][nx].fy = y;
-				t[ny][nx].dir = i;
-			}
-		}
-
-		if (tx == -1 || ty == -1) {
-			if (t[ly][lx].start) return;
-			tx = lx;
-			ty = ly;
-		}
-
-		while (true) {
-			int fx = t[ty][tx].fx;
-			int fy = t[ty][tx].fy;
-
-			if (fx == -1 || fy == -1) break;
-
-			if (t[fy][fx].start) {
-				//cerr << "GO " << msg[t[ty][tx].dir] << endl;
-				snake->go(msg[t[ty][tx].dir]);
-				return;
-			}
-			ty = fy;
-			tx = fx;
-		}
-	}
-
 	void onUpdate(Snake* snake, const json& j) override {
 	    //cerr << j.dump(4) << endl;
 
@@ -137,7 +23,36 @@ public:
 		SnakeMap& map = snake->map;
 		SnakeIds& ids = snake->ids;
 
-		bfs(snake, map, ids);
+        auto res = bfs(map, ids, cx, cy);
+        auto field = res.first;
+        auto q = res.second;
+        if (q.size() < 2) return;
+
+        int x, y;
+        tie(y, x) = q.back();
+        for (int i = 1; i < q.size(); i++) {
+            int tx, ty;
+            tie(ty, tx) = q[i];
+            if (ids[map[ty][tx].id].type == "food") {
+                x = tx;
+                y = ty;
+                break;
+            }
+        }
+
+        while (true) {
+            int fx = field[y][x].fx;
+            int fy = field[y][x].fy;
+
+            assert(fx != -1 && fy != -1);
+
+            if (field[fy][fx].start) {
+                snake->go(GO_MSG[field[y][x].dir]);
+                return;
+            }
+            y = fy;
+            x = fx;
+        }
 	}
 
 	void onInit(Snake* snake, const SnakeIds& snakeIds, const SnakeMap& snakeMap) override {
@@ -155,18 +70,16 @@ public:
 		// if (obj.type == "player") cerr << ", nick=" << obj.nick;
 		// cerr << ")" << endl;
 
-		if (obj.type == "player" && obj.nick == nick) {
-			myId = obj.id;
+		if (obj.type == "player" && obj.nick == nick) { //if new object has the same nick as bot
+			myId = obj.id; //then bot id is that object id
 			cerr << "Player id => " << myId << endl;
 		}
 	}
 
 	void onCellUpdate(Snake* snake, int x, int y, CellUpdate upd, ObjectInfo info) override {
-		//assert(info.id == upd.id);
 		if (upd.id == myId) {
 			cx = x;
 			cy = y;
-			//assert(snake->map[y][x].id == myId);
 			//cerr << "head position: " << y << " " << x << endl;
 		}
 	}
@@ -176,8 +89,8 @@ public:
 
 int main() {
     while (true) {
-    	MyStrategy strat;
-        SnakeWS::connect("ws://wrt.qjex.xyz:8080/snake/ws/faster", &strat);
+    	MyStrategy strategy;
+        SnakeWS::connect("ws://wrt.qjex.xyz:8080/snake/ws/faster", &strategy);
     }
     return 0;
 }
