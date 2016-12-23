@@ -15,6 +15,9 @@ namespace SnakeWS{
 
 	using easywsclient::WebSocket;
 
+	/**
+	 *	Handle connection between server and client while websocket is open
+	 */
 	int connect(string url, SnakeClient* client) {
 
 		WebSocket::pointer ws = NULL;
@@ -35,10 +38,11 @@ namespace SnakeWS{
 
 		Snake *snake = new Snake([ws](string msg) {
 			ws->send(msg);
+			ws->poll();
 		}, client);
 
 	    while (ws->getReadyState() != WebSocket::CLOSED) {
-	    	ws->poll();
+	    	ws->poll(1000);
 	    	ws->dispatch([snake](const string& msg) {
 	    		snake->onMessage(msg);
 	    	});
