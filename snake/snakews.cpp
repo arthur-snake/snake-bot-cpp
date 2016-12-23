@@ -1,12 +1,11 @@
-#include "easywsclient.hpp"
-#include "easywsclient.cpp"
+#include "../libs/easywsclient.hpp"
+#include "../libs/easywsclient.cpp"
 #ifdef _WIN32
 #pragma comment( lib, "ws2_32" )
 #include <WinSock2.h>
 #endif
 
 #include "snake.cpp"
-
 #include <bits/stdc++.h>
 
 using namespace std;

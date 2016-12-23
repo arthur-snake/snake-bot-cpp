@@ -1,7 +1,7 @@
-#include "snakews.cpp"
+#include "snake/snakews.cpp"
+#include "libs/json.hpp"
+#include "snake/utils.cpp"
 #include <bits/stdc++.h>
-#include "json.hpp"
-#include "utils.cpp"
 
 using json = nlohmann::json;
 
