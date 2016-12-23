@@ -15,8 +15,7 @@ namespace SnakeWS{
 
 	using easywsclient::WebSocket;
 
-	template <class Callable>
-	int connect(string url, Callable callable) {
+	int connect(string url, SnakeClient* client) {
 
 		WebSocket::pointer ws = NULL;
 
@@ -31,18 +30,17 @@ namespace SnakeWS{
 		    }
 		#endif
 
-		cout << "Connecting to " << url << endl;
-
-		Snake *snake = new Snake();
-
 	    ws = WebSocket::from_url(url);
 	    assert(ws);
+
+		Snake *snake = new Snake([ws](string msg) {
+			ws->send(msg);
+		}, client);
+
 	    while (ws->getReadyState() != WebSocket::CLOSED) {
 	    	ws->poll();
-	    	ws->dispatch([snake, ws, callable](const string& msg) {
-	    		snake->onMessage(msg, callable, [ws](string msg) {
-	    			ws->send(msg);
-	    		});
+	    	ws->dispatch([snake](const string& msg) {
+	    		snake->onMessage(msg);
 	    	});
 	    }
 	    delete ws;
