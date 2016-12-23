@@ -23,35 +23,35 @@ namespace SnakeWS{
 		WebSocket::pointer ws = NULL;
 
 		#ifdef _WIN32
-		    INT rc;
-		    WSADATA wsaData;
+			INT rc;
+			WSADATA wsaData;
 
-		    rc = WSAStartup(MAKEWORD(2, 2), &wsaData);
-		    if (rc) {
-		        cerr << "WSAStartup Failed." << endl;
-		        return 1;
-		    }
+			rc = WSAStartup(MAKEWORD(2, 2), &wsaData);
+			if (rc) {
+				cerr << "WSAStartup Failed." << endl;
+				return 1;
+			}
 		#endif
 
-	    ws = WebSocket::from_url(url);
-	    assert(ws);
+		ws = WebSocket::from_url(url);
+		assert(ws);
 
 		Snake *snake = new Snake([ws](string msg) {
 			ws->send(msg);
 			ws->poll();
 		}, client);
 
-	    while (ws->getReadyState() != WebSocket::CLOSED) {
-	    	ws->poll(1000);
-	    	ws->dispatch([snake](const string& msg) {
-	    		snake->onMessage(msg);
-	    	});
-	    }
-	    delete ws;
-	    delete snake;
+		while (ws->getReadyState() != WebSocket::CLOSED) {
+			ws->poll(1000);
+			ws->dispatch([snake](const string& msg) {
+				snake->onMessage(msg);
+			});
+		}
+		delete ws;
+		delete snake;
 
 		#ifdef _WIN32
-		    WSACleanup();
+			WSACleanup();
 		#endif
 
 		return 0;

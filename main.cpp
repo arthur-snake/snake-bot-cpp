@@ -16,43 +16,43 @@ public:
 	int cx, cy;
 
 	void onUpdate(Snake* snake, const json& j) override {
-	    //cerr << j.dump(4) << endl;
+		//cerr << j.dump(4) << endl;
 
 		if (cx == -1 || cy == -1) return;
 
 		SnakeMap& map = snake->map;
 		SnakeIds& ids = snake->ids;
 
-        auto res = bfs(map, ids, cx, cy);
-        auto field = res.first;
-        auto q = res.second;
-        if (q.size() < 2) return;
+		auto res = bfs(map, ids, cx, cy);
+		auto field = res.first;
+		auto q = res.second;
+		if (q.size() < 2) return;
 
-        int x, y;
-        tie(y, x) = q.back();
-        for (int i = 1; i < q.size(); i++) {
-            int tx, ty;
-            tie(ty, tx) = q[i];
-            if (ids[map[ty][tx].id].type == "food") {
-                x = tx;
-                y = ty;
-                break;
-            }
-        }
+		int x, y;
+		tie(y, x) = q.back();
+		for (int i = 1; i < q.size(); i++) {
+			int tx, ty;
+			tie(ty, tx) = q[i];
+			if (ids[map[ty][tx].id].type == "food") {
+				x = tx;
+				y = ty;
+				break;
+			}
+		}
 
-        while (true) {
-            int fx = field[y][x].fx;
-            int fy = field[y][x].fy;
+		while (true) {
+			int fx = field[y][x].fx;
+			int fy = field[y][x].fy;
 
-            assert(fx != -1 && fy != -1);
+			assert(fx != -1 && fy != -1);
 
-            if (field[fy][fx].start) {
-                snake->go(GO_MSG[field[y][x].dir]);
-                return;
-            }
-            y = fy;
-            x = fx;
-        }
+			if (field[fy][fx].start) {
+				snake->go(GO_MSG[field[y][x].dir]);
+				return;
+			}
+			y = fy;
+			x = fx;
+		}
 	}
 
 	void onInit(Snake* snake, const SnakeIds& snakeIds, const SnakeMap& snakeMap) override {
@@ -88,9 +88,9 @@ public:
 };
 
 int main() {
-    while (true) {
-    	MyStrategy strategy;
-        SnakeWS::connect("ws://wrt.qjex.xyz:8080/snake/ws/faster", &strategy);
-    }
-    return 0;
+	while (true) {
+		MyStrategy strategy;
+		SnakeWS::connect("ws://wrt.qjex.xyz:8080/snake/ws/faster", &strategy);
+	}
+	return 0;
 }
